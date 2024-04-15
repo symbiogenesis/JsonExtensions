@@ -14,15 +14,23 @@ namespace ConsoleJsonSample
 
             foreach (var prop in jsonReader.Read())
             {
-                if (prop.TokenType == JsonTokenType.StartObject || prop.TokenType == JsonTokenType.StartArray || prop.TokenType == JsonTokenType.EndObject || prop.TokenType == JsonTokenType.EndArray)
-                    Console.WriteLine($"- ({prop.TokenType})");
-                else if (prop.TokenType == JsonTokenType.PropertyName)
-                    Console.WriteLine($"Property: {prop.Name}");
-                else
-                    Console.WriteLine($"Value: {prop.Value}");
+                switch (prop.TokenType)
+                {
+                    case JsonTokenType.StartObject:
+                    case JsonTokenType.StartArray:
+                    case JsonTokenType.EndObject:
+                    case JsonTokenType.EndArray:
+                        Console.WriteLine($"- ({prop.TokenType})");
+                        break;
+                    case JsonTokenType.PropertyName:
+                        Console.WriteLine($"Property: {prop.Name}");
+                        break;
+                    default:
+                        Console.WriteLine($"Value: {prop.Value}");
+                        break;
+                }
             }
         }
-
 
         static FileStream GetFileStream()
         {
@@ -53,7 +61,5 @@ namespace ConsoleJsonSample
             byte[] bytes = Encoding.UTF8.GetBytes(jsonString);
             return new MemoryStream(bytes);
         }
-
     }
-
 }
