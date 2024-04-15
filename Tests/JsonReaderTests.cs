@@ -27,18 +27,22 @@ namespace Tests
             [10,20,30
             """;
 
-        private const string jsonSmallObject = 
+        private const string jsonSmallObject =
+            /*lang=json,strict*/
             """
-                                                                                                {
+            {
                 "a": 12,
                 "b": 12,
                 "c": 12
             }
             """;
 
-        private const string jsonSmallArray = """[12,12,12]""";
+        private const string jsonSmallArray =
+            /*lang=json,strict*/
+            """[12,12,12]""";
 
         private const string jsonArray =
+            /*lang=json,strict*/
             """
             [{
                 "Date": "2019-08-01T00:00:00-07:00",
@@ -49,7 +53,7 @@ namespace Tests
                 },
                 "Summary": "Hot",
                 "IsHot": true
-            }, 
+            },
             {
                 "Date": "2019-08-01T00:00:00-07:00",
                 "Temperature": 25,
