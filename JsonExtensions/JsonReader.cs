@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 
 namespace JsonExtensions
@@ -57,7 +57,7 @@ namespace JsonExtensions
                     int todo = buffer.Length - dataLen;
                     int done = Stream.Read(buffer, dataLen, todo);
                     dataLen += done;
-                    isFinalBlock = (done < todo);
+                    isFinalBlock = done < todo;
                 }
 
                 bool foundToken;
