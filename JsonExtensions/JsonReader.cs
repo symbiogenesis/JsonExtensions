@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Text.Json.Nodes;
 
 namespace JsonExtensions
@@ -120,27 +120,34 @@ namespace JsonExtensions
                 return false;
             }
 
-            if (reader.TokenType is JsonTokenType.StartObject or JsonTokenType.StartArray or JsonTokenType.EndObject or JsonTokenType.EndArray)
-            {
-                value = new JsonReaderValue { TokenType = reader.TokenType };
-                return true;
-            }
-
-            if (reader.TokenType == JsonTokenType.PropertyName)
-            {
-                value = new JsonReaderValue { TokenType = reader.TokenType, Name = reader.GetString() };
-                return true;
-            }
-
             JsonValue? propertyValue = null;
-            if (reader.TokenType == JsonTokenType.Null || reader.TokenType == JsonTokenType.None)
-                propertyValue = null;
-            else if (reader.TokenType == JsonTokenType.String)
-                propertyValue = JsonValue.Create(reader.GetString());
-            else if (reader.TokenType == JsonTokenType.False || reader.TokenType == JsonTokenType.True)
-                propertyValue = JsonValue.Create(reader.GetBoolean());
-            else if (reader.TokenType == JsonTokenType.Number)
-                propertyValue = JsonValue.Create(reader.GetDouble());
+
+            switch (reader.TokenType)
+            {
+                case JsonTokenType.StartObject:
+                case JsonTokenType.StartArray:
+                case JsonTokenType.EndObject:
+                case JsonTokenType.EndArray:
+                    value = new JsonReaderValue { TokenType = reader.TokenType };
+                    return true;
+                case JsonTokenType.PropertyName:
+                    value = new JsonReaderValue { TokenType = reader.TokenType, Name = reader.GetString() };
+                    return true;
+                case JsonTokenType.Null:
+                case JsonTokenType.None:
+                    propertyValue = null;
+                    break;
+                case JsonTokenType.String:
+                    propertyValue = JsonValue.Create(reader.GetString());
+                    break;
+                case JsonTokenType.False:
+                case JsonTokenType.True:
+                    propertyValue = JsonValue.Create(reader.GetBoolean());
+                    break;
+                case JsonTokenType.Number:
+                    propertyValue = JsonValue.Create(reader.GetDouble());
+                    break;
+            }
 
             value = new JsonReaderValue { Value = propertyValue, TokenType = reader.TokenType };
             return true;
