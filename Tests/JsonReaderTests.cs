@@ -73,8 +73,26 @@ namespace Tests
             this.output = output;
         }
 
+        [Theory]
+        [InlineData(jsonInvalid)]
+        [InlineData(jsonUnbalancedObject)]
+        [InlineData(jsonUnbalancedArray)]
+        public async Task InvalidJson_ShouldThrow(string json)
+        {
+            await using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
+            var jsonReader = new JsonReader(stream, 10);
+
+            Assert.ThrowsAny<JsonException>(() =>
+            {
+                foreach(var v in jsonReader.Read())
+                {
+                    output.WriteLine($"{v.TokenType}");
+                }
+            });
+        }
+
         [Fact]
-        public async Task LargeTokenGap_ShouldThrow()
+        public async Task LargeGap_ShouldThrow()
         {
             var largeGapJson = $"{{ \"a\": {new String(' ', 2 * 1024 * 1024)}10 }}";
             await using var stream = new MemoryStream(Encoding.UTF8.GetBytes(largeGapJson));
@@ -89,84 +107,16 @@ namespace Tests
             });
         }
 
-        [Fact]
-        public async Task InvalidJson_ShouldThrow()
+        [Theory]
+        [InlineData(jsonSmallObject, new[] { JsonTokenType.StartObject, JsonTokenType.PropertyName, JsonTokenType.Number, JsonTokenType.PropertyName, JsonTokenType.Number, JsonTokenType.PropertyName, JsonTokenType.Number, JsonTokenType.EndObject })]
+        [InlineData(jsonSmallArray, new[] { JsonTokenType.StartArray, JsonTokenType.Number, JsonTokenType.Number, JsonTokenType.Number, JsonTokenType.EndArray })]
+        public async Task Json_ShouldContainsAllTokens(string json, JsonTokenType[] expectedTokens)
         {
-            await using var stream = new MemoryStream(Encoding.UTF8.GetBytes(jsonInvalid));
-            var jsonReader = new JsonReader(stream, 10);
-
-            Assert.ThrowsAny<JsonException>(() =>
-            {
-                foreach(var v in jsonReader.Read())
-                {
-                    output.WriteLine($"{v.TokenType}");
-                }
-            });
-        }
-
-        [Fact]
-        public async Task UnbalancedObject_ShouldThrow()
-        {
-            await using var stream = new MemoryStream(Encoding.UTF8.GetBytes(jsonUnbalancedObject));
-            var jsonReader = new JsonReader(stream, 10);
-
-            var x = Assert.ThrowsAny<JsonException>(() =>
-            {
-                foreach(var v in jsonReader.Read())
-                {
-                    output.WriteLine($"{v.TokenType}");
-                }
-            });
-        }
-
-        [Fact]
-        public async Task UnbalancedArray_ShouldThrow()
-        {
-            await using var stream = new MemoryStream(Encoding.UTF8.GetBytes(jsonUnbalancedArray));
-            var jsonReader = new JsonReader(stream, 10);
-
-            Assert.ThrowsAny<JsonException>(() =>
-            {
-                foreach(var v in jsonReader.Read())
-                {
-                    output.WriteLine($"{v.TokenType}");
-                }
-            });
-        }
-
-        [Fact]
-        public async Task SmallObject_ShouldContainsAllTokens()
-        {
-            await using var stream = new MemoryStream(Encoding.UTF8.GetBytes(jsonSmallObject));
+            await using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
             var jsonReader = new JsonReader(stream, 10);
             var tokens = jsonReader.Read().Select(x => x.TokenType).ToList();
 
-            Assert.Equal([
-                JsonTokenType.StartObject,
-                JsonTokenType.PropertyName,
-                JsonTokenType.Number,
-                JsonTokenType.PropertyName,
-                JsonTokenType.Number,
-                JsonTokenType.PropertyName,
-                JsonTokenType.Number,
-                JsonTokenType.EndObject],
-             tokens);
-        }
-
-        [Fact]
-        public async Task SmallArray_ShouldContainsAllTokens()
-        {
-            await using var stream = new MemoryStream(Encoding.UTF8.GetBytes(jsonSmallArray));
-            var jsonReader = new JsonReader(stream, 10);
-            var tokens = jsonReader.Read().Select(x => x.TokenType).ToList();
-
-            Assert.Equal([
-                JsonTokenType.StartArray,
-                JsonTokenType.Number,
-                JsonTokenType.Number,
-                JsonTokenType.Number,
-                JsonTokenType.EndArray],
-             tokens);
+            Assert.Equal(expectedTokens, tokens);
         }
 
         [Fact]
