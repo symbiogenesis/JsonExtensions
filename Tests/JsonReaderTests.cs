@@ -192,5 +192,20 @@ namespace Tests
 
             Assert.Equal([JsonTokenType.StartObject, JsonTokenType.PropertyName, JsonTokenType.String, JsonTokenType.PropertyName, JsonTokenType.String, JsonTokenType.EndObject], tokens);
         }
+
+        [Theory]
+        [InlineData(jsonSmallObject)]
+        [InlineData(jsonSmallArray)]
+        public async Task RepeatedReads_ShouldReturnSameTokens(string json)
+        {
+            await using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
+            var jsonReader = new JsonReader(stream, 10);
+
+            var tokensFirstRead = jsonReader.Read().Select(x => x.TokenType).ToList();
+            stream.Position = 0;
+            var tokensSecondRead = jsonReader.Read().Select(x => x.TokenType).ToList();
+
+            Assert.Equal(tokensFirstRead, tokensSecondRead);
+        }
     }
 }
