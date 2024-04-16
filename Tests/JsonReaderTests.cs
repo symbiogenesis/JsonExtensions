@@ -169,7 +169,6 @@ namespace Tests
              tokens);
         }
 
-
         [Fact]
         public async Task JsonArray_ShouldContainsValidStringTypes()
         {
@@ -198,6 +197,50 @@ namespace Tests
             var tokens = jsonReader.Read().Where(x => x.TokenType == JsonTokenType.False || x.TokenType == JsonTokenType.True).Select(v => v.Value.Deserialize<bool>()).ToList();
 
             Assert.Equal([true, false], tokens);
+        }
+
+        [Fact]
+        public async Task NullValue_ShouldReturnNullToken()
+        {
+            const string jsonWithNull = "{ \"a\": null }";
+            await using var stream = new MemoryStream(Encoding.UTF8.GetBytes(jsonWithNull));
+            var jsonReader = new JsonReader(stream, 10);
+            var tokens = jsonReader.Read().Select(x => x.TokenType).ToList();
+
+            Assert.Equal([JsonTokenType.StartObject, JsonTokenType.PropertyName, JsonTokenType.Null, JsonTokenType.EndObject], tokens);
+        }
+
+        [Fact]
+        public async Task EmptyObject_ShouldReturnStartAndEndObjectTokens()
+        {
+            const string emptyObject = "{}";
+            await using var stream = new MemoryStream(Encoding.UTF8.GetBytes(emptyObject));
+            var jsonReader = new JsonReader(stream, 10);
+            var tokens = jsonReader.Read().Select(x => x.TokenType).ToList();
+
+            Assert.Equal([JsonTokenType.StartObject, JsonTokenType.EndObject], tokens);
+        }
+
+        [Fact]
+        public async Task EmptyArray_ShouldReturnStartAndEndArrayTokens()
+        {
+            const string emptyArray = "[]";
+            await using var stream = new MemoryStream(Encoding.UTF8.GetBytes(emptyArray));
+            var jsonReader = new JsonReader(stream, 10);
+            var tokens = jsonReader.Read().Select(x => x.TokenType).ToList();
+
+            Assert.Equal([JsonTokenType.StartArray, JsonTokenType.EndArray], tokens);
+        }
+
+        [Fact]
+        public async Task JsonWithSpecialCharacters_ShouldReturnCorrectTokens()
+        {
+            const string jsonWithSpecialChars = "{ \"a\": \"hello\\nworld\", \"b\": \"\\\"quoted\\\"\" }";
+            await using var stream = new MemoryStream(Encoding.UTF8.GetBytes(jsonWithSpecialChars));
+            var jsonReader = new JsonReader(stream, 10);
+            var tokens = jsonReader.Read().Select(x => x.TokenType).ToList();
+
+            Assert.Equal([JsonTokenType.StartObject, JsonTokenType.PropertyName, JsonTokenType.String, JsonTokenType.PropertyName, JsonTokenType.String, JsonTokenType.EndObject], tokens);
         }
     }
 }
