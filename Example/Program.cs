@@ -18,7 +18,7 @@ namespace ConsoleJsonSample
 
             var initialMemory = GC.GetTotalMemory(true);
 
-            var jsonReader = new JsonReader(GetFileStream()); // test 10 to see buffer increase in debug console
+            using var jsonReader = new JsonReader(GetFileStream()); // test 10 to see buffer increase in debug console
 
             while (jsonReader.Read())
             {
