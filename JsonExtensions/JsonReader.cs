@@ -3,7 +3,6 @@ using System.Text.Json.Nodes;
 
 namespace JsonExtensions
 {
-
     public class JsonReader
     {
         /// <summary>
@@ -30,7 +29,6 @@ namespace JsonExtensions
             if (!this.Stream.CanRead)
                 throw new Exception("Stream is not readable");
         }
-
 
         /// <summary>
         /// Enumerate over the stream and read the properties
@@ -91,7 +89,7 @@ namespace JsonExtensions
                     if(dataPos > 0)
                     {
                         // Shift partial token data to the start of the buffer
-                        Array.Copy(buffer, dataPos, buffer, 0, dataLen);
+                        Buffer.BlockCopy(buffer, dataPos, buffer, 0, dataLen);
                     }
 
                     if(tokensFound == 0)
@@ -101,7 +99,10 @@ namespace JsonExtensions
                         {
                             throw new JsonException($"sanity check on input stream failed, json token gap of more than {MaxTokenGap} bytes");
                         }
-                        Array.Resize(ref buffer, buffer.Length * 2);
+
+                        var newBuffer = new byte[buffer.Length * 2];
+                        Buffer.BlockCopy(buffer, 0, newBuffer, 0, buffer.Length);
+                        buffer = newBuffer;
                     }
                 }
             }
