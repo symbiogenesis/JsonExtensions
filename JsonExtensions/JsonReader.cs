@@ -1,10 +1,10 @@
 ﻿using System.Buffers;
 using System.Buffers.Text;
 using System.Diagnostics;
+using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using System.Text.RegularExpressions;
 
 namespace JsonExtensions
 {
@@ -272,15 +272,68 @@ namespace JsonExtensions
             this.Read();
             return this.GetString();
         }
+
         public string? GetString()
         {
             if (this.TokenType != JsonTokenType.PropertyName && this.TokenType != JsonTokenType.String)
                 return null;
 
-            var str = utf8Encoding.GetString(this.Value.ToArray());
-
-            return Regex.Unescape(str);
+            return UnescapeString(this.Value);
         }
+
+        private static readonly Dictionary<byte, char> escapeLookup = new()
+        {
+            {(byte)'n', '\n'},
+            {(byte)'r', '\r'},
+            {(byte)'t', '\t'},
+            {(byte)'b', '\b'},
+            {(byte)'f', '\f'},
+            {(byte)'\\', '\\'},
+            {(byte)'/', '/'},
+            {(byte)'"', '\"'}
+        };
+
+        private string UnescapeString(ReadOnlyMemory<byte> memory)
+        {
+            var length = memory.Length;
+
+            Span<char> result = stackalloc char[length];
+
+            ReadOnlySpan<byte> memorySpan = memory.Span;
+
+            int i = 0;
+            int j = 0;
+            while (i < length)
+            {
+                byte b = memorySpan[i];
+                char c;
+                if (b == '\\')
+                {
+                    b = memorySpan[++i];
+                    if (b == 'u') // Unicode escape sequence
+                    {
+                        var unicodeBytes = memorySpan.Slice(i + 1, 4);
+                        var unicodeHex = Encoding.UTF8.GetString(unicodeBytes.ToArray());
+                        c = (char)int.Parse(unicodeHex, NumberStyles.HexNumber);
+                        i += 4; // Skip the 4 hex digits
+                    }
+                    else if (!escapeLookup.TryGetValue(b, out c))
+                    {
+                        c = (char)b;
+                    }
+                }
+                else
+                {
+                    c = (char)b;
+                }
+                result[j] = c;
+                j++;
+                i++;
+            }
+
+            return result.Slice(0, j).ToString();
+        }
+
         public string? ReadAsEscapedString()
         {
             this.Read();
